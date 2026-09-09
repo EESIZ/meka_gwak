@@ -88,13 +88,25 @@ def locate(value, values):
 
 
 def get_examples(domain, document_type, query='', pattern=None, limit=3):
+    # 같은 문서 종류의 예문이 없으면 같은 분야의 법률문서 예문을 공통 참고로 사용한다.
     data = read_json(ROOT / 'data' / 'examples.json')
-    rows = [x for x in data if x['domain'] == domain and x['document_type'] == document_type
-            and (not pattern or pattern in x['patterns'])]
+    pool = [x for x in data if x['domain'] == domain and (not pattern or pattern in x['patterns'])]
+    rows = [x for x in pool if x['document_type'] == document_type] or pool
     terms = set(re.findall(r'[가-힣A-Za-z]{2,}', query))
     if terms:
         rows.sort(key=lambda r: (-sum(t in r['text'] for t in terms), r['key']))
-    return [{'key': r['key'], 'text': r['text']} for r in rows[:limit]]
+    return [{'key': r['key'], 'document_type': r['document_type'], 'text': r['text']} for r in rows[:limit]]
+
+
+def reference_group(groups, domain, document_type):
+    # 문서 종류별 분포가 없으면 같은 분야의 법률문서 분포를 공통 참고값으로 사용한다.
+    key = document_type + ':' + domain
+    if key in groups:
+        return key, groups[key], 'matched'
+    for key in sorted(groups):
+        if key.endswith(':' + domain):
+            return key, groups[key], 'domain_reference'
+    return None, None, 'examples_or_user_reference_required'
 
 
 def inspect(text, domain, document_type, kiwi, profiles=None):
@@ -109,7 +121,7 @@ def inspect(text, domain, document_type, kiwi, profiles=None):
     data = profiles if profiles is not None else read_json(ROOT / 'data' / 'style_profiles.json')
     if data['extractor'] != EXTRACTOR:
         raise ValueError('현재 분석기와 일치하는 문체 참고값을 사용하세요.')
-    group = data['groups'].get(document_type + ':' + domain)
+    group_key, group, reference = reference_group(data['groups'], domain, document_type)
     measurements, lexical = {}, []
     if group:
         for key, values in group['metrics'].items():
@@ -127,7 +139,9 @@ def inspect(text, domain, document_type, kiwi, profiles=None):
                                   'metrics': extract(p['text'], kiwi)['metrics']})
     signals = sorted(measurements.values(), key=lambda r: -abs(r['percentile']-50))[:3]
     return {
-        'status': 'measured', 'reference': 'matched' if group else 'examples_or_user_reference_required',
+        'status': 'measured', 'reference': reference, 'reference_group': group_key,
+        'reference_note': ('같은 분야 법률문서의 공통 분포를 참고값으로 사용했다. 경어체 등 문서 종류 고유의 특성은 유지한다.'
+                           if reference == 'domain_reference' else None),
         'metrics': features['metrics'], 'reference_positions': measurements,
         'review_signals': signals, 'lexical_positions': lexical[:5],
         'paragraphs': per_paragraph, 'quoted_metrics': extract(quoted, kiwi)['metrics'] if quoted else None,
@@ -163,7 +177,7 @@ def main(argv=None):
             result = inspect(text, args.domain, args.document_type, analyzer())
             if args.before:
                 result['revision'] = changes(read_text(args.before), text, read_json(args.anchors) if args.anchors else [])
-            summary = {k: result[k] for k in ('status', 'reference', 'review_signals', 'lexical_positions', 'next')}
+            summary = {k: result[k] for k in ('status', 'reference', 'reference_group', 'reference_note', 'review_signals', 'lexical_positions', 'next')}
             summary['paragraph_locations'] = [{'paragraph': r['paragraph'], 'line': r['line']} for r in result['paragraphs'][:5]]
             summary['examples'] = [{'text': x['text'][:1200], 'excerpt': len(x['text']) > 1200} for x in result['examples'][:2]]
             summary['detail_file'] = str(args.output)

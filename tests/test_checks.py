@@ -268,14 +268,28 @@ class StyleTests(unittest.TestCase):
         self.assertEqual(result['reference'],'matched')
         self.assertEqual(result['status'],'measured')
 
-    def test_other_role_examples_request(self):
+    def test_other_role_uses_domain_reference(self):
         result = style.inspect('준비서면을 제출한다.','civil','brief',self.kiwi)
-        self.assertEqual(result['reference'],'examples_or_user_reference_required')
-        self.assertEqual(result['reference_positions'],{})
+        self.assertEqual(result['reference'],'domain_reference')
+        self.assertEqual(result['reference_group'],'judgment:civil')
+        self.assertTrue(result['reference_positions'])
+        self.assertTrue(result['reference_note'])
+        self.assertTrue(result['examples'])
+
+    def test_matched_reference_has_no_note(self):
+        result = style.inspect('이 사건에 관하여 판단한다.','civil','judgment',self.kiwi)
+        self.assertEqual(result['reference_group'],'judgment:civil')
+        self.assertIsNone(result['reference_note'])
+
+    def test_examples_fallback_to_domain(self):
+        rows = style.get_examples('civil','brief',limit=2)
+        self.assertTrue(rows)
+        self.assertTrue(all(r['document_type']=='judgment' for r in rows))
 
     def test_small_group_examples_only(self):
         result = style.inspect('피고인의 주장에 관하여 판단한다.','criminal','judgment',self.kiwi)
         self.assertEqual(result['reference'],'examples_or_user_reference_required')
+        self.assertIsNone(result['reference_group'])
         self.assertTrue(result['examples'])
 
     def test_quoted_text_separate(self):
