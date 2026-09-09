@@ -38,6 +38,8 @@ PYTHON "<skill>/scripts/style_check.py" check "revised.txt" --domain administrat
 - 예문 검색은 같은 문서 종류를 우선하고 없으면 같은 분야의 법률문서 예문을 제공하며, 각 예문에 `document_type`을 표시한다.
 - `--anchors values.json`에는 보존할 당사자 이름·문구 등의 문자열 배열을 제공할 수 있다.
 - 화면에는 짧은 측정 결과를 표시한다. 전체 변경 구간과 예문 문맥은 `--output` 파일에서 확인한다.
+- `review_signals`는 참고 분포에서 가장 벗어난 지표 3개다. 문장당 글자 수(`sentence_chars`)는 `metrics`와 `reference_positions`에는 남지만 `review_signals`에는 선정되지 않는다. 길이는 약한 참조이며, 연결어미·쉼표 수치를 맞추려고 문장을 늘리거나 표현을 덧붙이지 않는다.
+- 경어체 전환은 문장 길이 등 측정값에 영향을 줄 수 있다. 종결어미 자체는 지표에 없다.
 
 통계는 전체 문서의 참고 위치로 읽는다. 형태소 기준 빈도는 1,000개당, 연결어미·쉼표는 문장당, 반복은 내용 형태소 기준 비율이다. 문단별 값은 위치를 찾아 읽는 보조 정보다.
 

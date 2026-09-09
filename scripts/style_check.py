@@ -18,6 +18,7 @@ PARTY_TOKENS = {'원고/NNG', '피고/NNG', '피고인/NNG', '피의자/NNG', '�
                 '청구인/NNG', '피청구인/NNG', '채권자/NNG', '채무자/NNG', '참가인/NNG', '상대방/NNG', '소외/NNG',
                 '망인/NNG', '기관/NNG', '행정청/NNG', '법원/NNG', '국가/NNG', '공무원/NNG'}  # 당사자·기관 지칭
 EXCLUDED_LEXICAL = APPELLATE_TOKENS | PARTY_TOKENS
+REFERENCE_ONLY = {'sentence_chars'}  # 측정·참고 위치는 유지하되 우선 퇴고 신호로는 선정하지 않는 지표
 LABELS = {
     'sentence_chars': '문장당 글자 수',
     'ec_per_sentence': '문장당 연결어미',
@@ -147,7 +148,8 @@ def inspect(text, domain, document_type, kiwi, profiles=None):
         if not p['quoted']:
             per_paragraph.append({'paragraph': index, 'line': p['line'],
                                   'metrics': extract(p['text'], kiwi)['metrics']})
-    signals = sorted(measurements.values(), key=lambda r: -abs(r['percentile']-50))[:3]
+    signals = sorted((r for key, r in measurements.items() if key not in REFERENCE_ONLY),
+                     key=lambda r: -abs(r['percentile']-50))[:3]
     return {
         'status': 'measured', 'reference': reference, 'reference_group': group_key,
         'metrics': features['metrics'], 'reference_positions': measurements,

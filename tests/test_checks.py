@@ -287,6 +287,19 @@ class StyleTests(unittest.TestCase):
         result = style.inspect('원심의 판단은 상고이유와 같이 주문에 영향을 미쳤다.','civil','judgment',self.kiwi)
         self.assertFalse({r['token'] for r in result['lexical_positions']} & style.EXCLUDED_LEXICAL)
 
+    def test_sentence_length_measured_but_not_a_signal(self):
+        short = '원고는 청구한다. 피고는 다툰다. 법원은 판단한다. 청구는 이유 있다.'
+        long = ('원고가 피고에 대하여 이 사건 계약에 기한 대금의 지급을 구함에 대하여 피고는 위 계약이 무효라고 다투나, '
+                '앞서 본 사정들에 비추어 보면 위 계약은 유효하다고 할 것이고, 나아가 피고가 주장하는 사유들은 모두 '
+                '이를 인정할 증거가 없으므로 원고의 청구는 이유 있다고 판단된다.')
+        for text in (short, long):
+            result = style.inspect(text,'civil','judgment',self.kiwi)
+            self.assertIn('sentence_chars', result['reference_positions'])
+            self.assertIsNotNone(result['metrics']['sentence_chars'])
+            self.assertNotIn(style.LABELS['sentence_chars'], {r['label'] for r in result['review_signals']})
+            self.assertLessEqual(len(result['review_signals']), 3)
+        self.assertLess(style.inspect(short,'civil','judgment',self.kiwi)['reference_positions']['sentence_chars']['percentile'], 5)
+
     def test_examples_fallback_to_domain(self):
         rows = style.get_examples('civil','brief',limit=2)
         self.assertTrue(rows)
