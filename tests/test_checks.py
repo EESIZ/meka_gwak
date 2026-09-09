@@ -280,6 +280,13 @@ class StyleTests(unittest.TestCase):
         self.assertEqual(result['reference_group'],'civil')
         self.assertNotIn('reference_note',result)
 
+    def test_appellate_tokens_excluded(self):
+        data = read_json(ROOT/'data'/'style_profiles.json')
+        for group in data['groups'].values():
+            self.assertFalse(set(group['lexical']) & style.EXCLUDED_LEXICAL)
+        result = style.inspect('원심의 판단은 상고이유와 같이 주문에 영향을 미쳤다.','civil','judgment',self.kiwi)
+        self.assertFalse({r['token'] for r in result['lexical_positions']} & style.EXCLUDED_LEXICAL)
+
     def test_examples_fallback_to_domain(self):
         rows = style.get_examples('civil','brief',limit=2)
         self.assertTrue(rows)

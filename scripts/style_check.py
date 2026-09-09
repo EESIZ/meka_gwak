@@ -12,6 +12,8 @@ VERSION = '1.0.0'
 EXTRACTOR = 'kiwi-0.22.2-style-v1'
 CONTENT = {'NNG', 'NNP', 'VV', 'VA', 'MAG', 'XR'}
 PUNCT = {'SF', 'SP', 'SS', 'SSO', 'SSC', 'SE', 'SO', 'SW', 'SB'}
+EXCLUDED_LEXICAL = {'상고/NNG', '원심/NNG', '주문/NNG', '관여/NNG', '법관/NNG', '일치/NNG', '의견/NNG',
+                    '오해/NNG', '심리/NNG', '영향/NNG', '미치/VV', '패소/NNG'}  # 상고심 절차·결어 관용구 전용
 LABELS = {
     'sentence_chars': '문장당 글자 수',
     'ec_per_sentence': '문장당 연결어미',
@@ -125,6 +127,8 @@ def inspect(text, domain, document_type, kiwi, profiles=None):
             if value is not None and values:
                 measurements[key] = dict(label=LABELS[key], **locate(value, values))
         for token, values in group['lexical'].items():
+            if token in EXCLUDED_LEXICAL:
+                continue
             item = dict(token=token, **locate(features['lexical'].get(token, 0), values))
             lexical.append(item)
         lexical.sort(key=lambda r: -abs(r['percentile']-50))
