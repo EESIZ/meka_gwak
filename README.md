@@ -82,6 +82,19 @@ Python 3.10 이상이 필요합니다. 사용자 작업 폴더에 가상환경�
 
 Claude Code에서는 `/meka-gwak`과 함께 사건 자료, 문서 종류, 제출처와 확보한 판례를 전달합니다. Codex에서는 `$meka-gwak`을 지정합니다.
 
+### 컨테이너 이미지로 실행
+
+형태소 분석기 설치 없이 스크립트만 쓰려면 [GitHub Packages](https://github.com/EESIZ/meka_gwak/pkgs/container/meka_gwak)의 이미지를 사용합니다. 본문 파일이 있는 폴더를 `/work`에 연결하면 결과 파일도 그 폴더에 저장됩니다.
+
+```sh
+docker run --rm -v "$PWD:/work" ghcr.io/eesiz/meka_gwak style check draft.txt --domain civil --document-type judgment --output style-before.json
+docker run --rm -v "$PWD:/work" ghcr.io/eesiz/meka_gwak style examples --domain civil --document-type judgment --query "요건 사실 판단" --limit 2
+docker run --rm -v "$PWD:/work" ghcr.io/eesiz/meka_gwak format final.docx --body body.txt --form form.json --output format.json
+docker run --rm ghcr.io/eesiz/meka_gwak test
+```
+
+Linux에서 결과 파일의 소유자를 현재 사용자로 두려면 `--user "$(id -u):$(id -g)"`를 붙입니다. 이미지는 `main` 브랜치에 스크립트·데이터 변경이 올라올 때 [워크플로](.github/workflows/publish-image.yml)가 다시 만들어 `latest` 태그로 올립니다. 작성 지침(SKILL.md)과 AI 판단 단계는 이미지에 포함되지 않으며, 이미지는 도구 실행만 담당합니다.
+
 ## 구성
 
 | 경로 | 역할 |
@@ -94,6 +107,7 @@ Claude Code에서는 `/meka-gwak`과 함께 사건 자료, 문서 종류, 제출
 | `data/` | 문체 참고 분포와 예문 |
 | [sources/](sources/README.md) | 데이터 출처와 구축 범위 |
 | `tests/` | 스크립트 회귀 테스트 |
+| [Dockerfile](Dockerfile) | 도구 실행용 컨테이너 이미지 정의 |
 
 ## 적용 범위
 
