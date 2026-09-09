@@ -1,0 +1,3 @@
+kiwipiepy==0.22.2
+kiwipiepy_model==0.22.1
+pypdf==6.10.0
