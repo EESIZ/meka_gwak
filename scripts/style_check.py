@@ -12,8 +12,12 @@ VERSION = '1.0.0'
 EXTRACTOR = 'kiwi-0.22.2-style-v1'
 CONTENT = {'NNG', 'NNP', 'VV', 'VA', 'MAG', 'XR'}
 PUNCT = {'SF', 'SP', 'SS', 'SSO', 'SSC', 'SE', 'SO', 'SW', 'SB'}
-EXCLUDED_LEXICAL = {'상고/NNG', '원심/NNG', '주문/NNG', '관여/NNG', '법관/NNG', '일치/NNG', '의견/NNG',
+APPELLATE_TOKENS = {'상고/NNG', '원심/NNG', '주문/NNG', '관여/NNG', '법관/NNG', '일치/NNG', '의견/NNG',
                     '오해/NNG', '심리/NNG', '영향/NNG', '미치/VV', '패소/NNG'}  # 상고심 절차·결어 관용구 전용
+PARTY_TOKENS = {'원고/NNG', '피고/NNG', '피고인/NNG', '피의자/NNG', '검사/NNG', '민원인/NNG', '신청인/NNG',
+                '청구인/NNG', '피청구인/NNG', '채권자/NNG', '채무자/NNG', '참가인/NNG', '상대방/NNG', '소외/NNG',
+                '망인/NNG', '기관/NNG', '행정청/NNG', '법원/NNG', '국가/NNG', '공무원/NNG'}  # 당사자·기관 지칭
+EXCLUDED_LEXICAL = APPELLATE_TOKENS | PARTY_TOKENS
 LABELS = {
     'sentence_chars': '문장당 글자 수',
     'ec_per_sentence': '문장당 연결어미',
@@ -101,10 +105,16 @@ def get_examples(domain, document_type, query='', pattern=None, limit=3):
 
 
 def reference_group(groups, domain):
-    # 참고 분포는 분야별 법률문서 공통 분포다. 문서 종류는 예문 선택과 서식에만 쓴다.
+    # 참고 분포는 분야별 법률문서 공통 분포다. 분야 분포가 없으면 모든 분야를 합산한 분포를 사용한다.
     if domain in groups:
         return domain, groups[domain], 'matched'
-    return None, None, 'examples_or_user_reference_required'
+    keys = sorted(groups)
+    if not keys:
+        raise ValueError('문체 참고 분포가 비어 있습니다.')
+    metrics = {m: [v for k in keys for v in groups[k]['metrics'][m]] for m in groups[keys[0]]['metrics']}
+    shared = set.intersection(*(set(groups[k]['lexical']) for k in keys))
+    lexical = {t: [v for k in keys for v in groups[k]['lexical'][t]] for t in sorted(shared)}
+    return 'combined:' + '+'.join(keys), {'metrics': metrics, 'lexical': lexical}, 'matched'
 
 
 def inspect(text, domain, document_type, kiwi, profiles=None):

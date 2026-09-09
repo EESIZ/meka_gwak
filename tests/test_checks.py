@@ -292,11 +292,27 @@ class StyleTests(unittest.TestCase):
         self.assertTrue(rows)
         self.assertTrue(all(r['document_type']=='judgment' for r in rows))
 
-    def test_small_group_examples_only(self):
+    def test_small_group_uses_combined_reference(self):
         result = style.inspect('피고인의 주장에 관하여 판단한다.','criminal','judgment',self.kiwi)
-        self.assertEqual(result['reference'],'examples_or_user_reference_required')
-        self.assertIsNone(result['reference_group'])
+        self.assertEqual(result['reference'],'matched')
+        self.assertEqual(result['reference_group'],'combined:administrative+civil')
+        self.assertTrue(result['reference_positions'])
         self.assertTrue(result['examples'])
+
+    def test_combined_reference_concatenates_groups(self):
+        groups = {'a': {'metrics': {'x': [1, 2]}, 'lexical': {'t/NNG': [1], 'u/NNG': [2]}},
+                  'b': {'metrics': {'x': [3]}, 'lexical': {'t/NNG': [4]}}}
+        key, group, reference = style.reference_group(groups, 'c')
+        self.assertEqual((key, reference), ('combined:a+b', 'matched'))
+        self.assertEqual(group['metrics']['x'], [1, 2, 3])
+        self.assertEqual(group['lexical'], {'t/NNG': [1, 4]})
+
+    def test_party_tokens_excluded(self):
+        data = read_json(ROOT/'data'/'style_profiles.json')
+        for group in data['groups'].values():
+            self.assertFalse(set(group['lexical']) & style.PARTY_TOKENS)
+        result = style.inspect('원고와 피고는 법원에 출석하였다.','civil','judgment',self.kiwi)
+        self.assertFalse({r['token'] for r in result['lexical_positions']} & style.PARTY_TOKENS)
 
     def test_quoted_text_separate(self):
         result = style.inspect('원고의 주장을 판단한다.\n\n> 인용문의 내용이다.','civil','judgment',self.kiwi)

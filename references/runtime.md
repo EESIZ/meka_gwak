@@ -33,7 +33,8 @@ PYTHON "<skill>/scripts/style_check.py" check "revised.txt" --domain administrat
 
 - 분야: `civil`, `criminal`, `administrative`.
 - 문서 종류: `judgment`, `complaint`, `brief`, `opinion` 등 실제 역할에 맞는 이름.
-- 참고 분포는 분야별 법률문서 공통 분포다. `reference: matched`는 해당 분야의 분포(`reference_group`)를 사용했다는 뜻이고, `examples_or_user_reference_required`는 분야 분포가 없어 문맥 예문 중심으로 검토할 상태다. 문서 종류는 예문 선택의 우선순위에만 쓰인다.
+- 참고 분포는 분야별 법률문서 공통 분포다. `reference_group`이 분야 이름이면 그 분야의 분포를, `combined:…`이면 분야 분포가 없어 모든 분야를 합산한 분포를 사용한 것이다. 문서 종류는 예문 선택의 우선순위에만 쓰인다.
+- 어휘 참고에서 상고심 전용 관용구와 당사자·기관 지칭(원고, 피고, 피고인, 검사, 법원 등)은 제외되어 있다. 분야별 용어 차이는 아직 반영하지 않았다.
 - 예문 검색은 같은 문서 종류를 우선하고 없으면 같은 분야의 법률문서 예문을 제공하며, 각 예문에 `document_type`을 표시한다.
 - `--anchors values.json`에는 보존할 당사자 이름·문구 등의 문자열 배열을 제공할 수 있다.
 - 화면에는 짧은 측정 결과를 표시한다. 전체 변경 구간과 예문 문맥은 `--output` 파일에서 확인한다.
